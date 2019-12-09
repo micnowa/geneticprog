@@ -1,12 +1,11 @@
 package neural.genetic.programming.logic;
 
 import neural.genetic.programming.Network;
-import neural.genetic.programming.fitness.Fitness;
+import neural.genetic.programming.fitness.NetworkScore;
 
-
-public class LogicGatesFitter implements Fitness<Boolean> {
+public class LogicGatesFitter implements NetworkScore<Boolean> {
     @Override
-    public int getGridFitness(Network<Boolean> network) {
+    public int computeNetworkScore(Network<Boolean> network) {
         int inputNumber = network.getInputNumber();
         int possibilities = (int) Math.pow(2, inputNumber);
         int score = 0;
@@ -30,9 +29,9 @@ public class LogicGatesFitter implements Fitness<Boolean> {
         Boolean[] tab = new Boolean[N];
         String s = Integer.toString(ii, 2);
         if (s.length() != N) {
-            String sPlus = "";
+            StringBuilder sPlus = new StringBuilder();
             int len = N - s.length();
-            for (int j = 0; j < len; j++) sPlus += "0";
+            for (int j = 0; j < len; j++) sPlus.append("0");
             s = sPlus + s;
         }
         for (int j = 0; j < N; j++) tab[j] = s.charAt(j) == '1';
@@ -40,7 +39,7 @@ public class LogicGatesFitter implements Fitness<Boolean> {
     }
 
     @Override
-    public int getMaxFitness(Network<Boolean> network) {
+    public int computeMaximumScore(Network<Boolean> network) {
         return (int) Math.pow(2, network.getInputNumber());
     }
 }

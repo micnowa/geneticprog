@@ -1,9 +1,8 @@
 package neural.genetic.programming;
 
-import java.util.LinkedList;
-
 import neural.genetic.programming.fitness.Operation;
 
+import java.util.LinkedList;
 
 public class Neuron<T> {
     private int i;
@@ -58,58 +57,27 @@ public class Neuron<T> {
         return j;
     }
 
-    public int getEnteringGatesNumber() {
-        return enteringNeurons.size();
-    }
-
-
-    public void setEnteringNeurons(LinkedList<Neuron<T>> gatesEntering) {
-        this.enteringNeurons = gatesEntering;
-    }
-
-
-    public LinkedList<Neuron<T>> getEnteringNeurons() {
+    LinkedList<Neuron<T>> getEnteringNeurons() {
         return enteringNeurons;
     }
-
-
-    public int getExitingGatesNumber() {
-        return exitingNeurons.size();
-    }
-
 
     public LinkedList<Neuron<T>> getExitingNeurons() {
         return exitingNeurons;
     }
 
-
-    public void setExitingNeurons(LinkedList<Neuron<T>> gatesExiting) {
-        this.exitingNeurons = gatesExiting;
-    }
-
-
-    public T getValue() {
+    T getValue() {
         return value;
     }
 
-
-    public void setValue(T value) {
+    void setValue(T value) {
         this.value = value;
     }
-
 
     void addEnteringGate(Neuron<T> neuron) {
         enteringNeurons.add(neuron);
     }
 
-
-    void addEnteringGateAt(int pos, Neuron<T> neuron) {
-        enteringNeurons.add(pos, neuron);
-    }
-
-
     void addExitingGate(Neuron<T> neuron) {
         exitingNeurons.add(neuron);
     }
-
 }

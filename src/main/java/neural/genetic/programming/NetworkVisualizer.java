@@ -4,7 +4,7 @@ import java.awt.*;
 import java.util.LinkedList;
 
 
-public class GridVisualizer<T> extends Canvas {
+public class NetworkVisualizer<T> extends Canvas {
 
     private static final long serialVersionUID = 1L;
 
@@ -18,7 +18,7 @@ public class GridVisualizer<T> extends Canvas {
     private int dist;
 
 
-    public GridVisualizer(Network<T> network) {
+    public NetworkVisualizer(Network<T> network) {
         this.network = network;
     }
 
