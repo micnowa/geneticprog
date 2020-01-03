@@ -7,35 +7,24 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Random;
 
-
 public class Network<T> implements Serializable {
     private int m;
     private int n;
-    private int enteringGatesNumber;
+    private int inputNeuronsNumber;
     private Neuron<T>[][] neurons;
     private int inputNumber;
     private Neuron<T>[] input;
     private int outputNumber;
     private Neuron<T>[] output;
-
     private Random randomGenerator;
-
-    private LinkedList<Operation<T>> functionList;
-
-
+    private LinkedList<Operation<T>> operationList;
     private double recurrentProbability;
-
-
     private double probability;
-
-
     private ArrayList<Neuron<T>> activeNeurons;
-
-
     private T initialValue;
 
 
-    public Network(LinkedList<Operation<T>> functions, int inputNum, int outputNum, int m, int n, T initialValue, double probability, double recurrentProbability) {
+    Network(LinkedList<Operation<T>> functions, int inputNum, int outputNum, int m, int n, T initialValue, double probability, double recurrentProbability) {
         this.m = m;
         this.n = n;
         this.neurons = new Neuron[m][n];
@@ -46,36 +35,36 @@ public class Network<T> implements Serializable {
 
         this.inputNumber = inputNum;
         this.input = new Neuron[inputNumber];
-        for (int ii = 0; ii < inputNumber; ii++) {
-            this.input[ii] = new Neuron<T>();
-            this.input[ii].setI(ii);
-            this.input[ii].setJ(-1);
-            this.input[ii].exitingNeurons = new LinkedList<Neuron<T>>();
+        for (int i = 0; i < inputNumber; i++) {
+            this.input[i] = new Neuron<T>();
+            this.input[i].setI(i);
+            this.input[i].setJ(-1);
+            this.input[i].outputNeurons = new LinkedList<Neuron<T>>();
         }
 
         this.outputNumber = outputNum;
         this.output = new Neuron[outputNumber];
-        for (int ii = 0; ii < outputNumber; ii++) {
-            this.output[ii] = new Neuron<T>();
-            this.output[ii].setI(ii);
-            this.output[ii].setJ(n);
-            this.output[ii].enteringNeurons = new LinkedList<Neuron<T>>();
+        for (int i = 0; i < outputNumber; i++) {
+            this.output[i] = new Neuron<T>();
+            this.output[i].setI(i);
+            this.output[i].setJ(n);
+            this.output[i].inputNeurons = new LinkedList<Neuron<T>>();
         }
 
-        this.functionList = new LinkedList<Operation<T>>();
-        this.enteringGatesNumber = functions.get(0).argsNumber();
+        this.operationList = new LinkedList<Operation<T>>();
+        this.inputNeuronsNumber = functions.get(0).argsNumber();
         for (Operation<T> func : functions) {
-            this.functionList.add(func);
-            if (func.argsNumber() > this.enteringGatesNumber) this.enteringGatesNumber = func.argsNumber();
+            this.operationList.add(func);
+            if (func.argsNumber() > this.inputNeuronsNumber) this.inputNeuronsNumber = func.argsNumber();
         }
-        for (int jj = 0; jj < n; jj++) {
-            for (int ii = 0; ii < m; ii++) {
-                this.neurons[ii][jj] = new Neuron<T>(this.functionList.get(this.randomGenerator.nextInt(this.functionList.size())), ii, jj, initialValue);
+        for (int j = 0; j < n; j++) {
+            for (int i = 0; i < m; i++) {
+                this.neurons[i][j] = new Neuron<>(this.operationList.get(this.randomGenerator.nextInt(this.operationList.size())), i, j, initialValue);
             }
         }
 
-        this.activeNeurons = new ArrayList<Neuron<T>>();
-        linkAllGates();
+        this.activeNeurons = new ArrayList<>();
+        connectAllNeurons();
     }
 
 
@@ -83,11 +72,9 @@ public class Network<T> implements Serializable {
         m = network.m;
         n = network.n;
         randomGenerator = new Random();
-        enteringGatesNumber = network.getEnteringGatesNumber();
-        functionList = new LinkedList<Operation<T>>(network.functionList);
-        for (Operation<T> func : network.functionList) {
-            functionList.add(func);
-        }
+        inputNeuronsNumber = network.getInputNeuronsNumber();
+        operationList = new LinkedList<>(network.operationList);
+        operationList.addAll(network.operationList);
         inputNumber = network.inputNumber;
         outputNumber = network.outputNumber;
         probability = network.getProbability();
@@ -98,220 +85,105 @@ public class Network<T> implements Serializable {
         for (int ii = 0; ii < inputNumber; ii++) {
             input[ii] = new Neuron<T>(null, ii, -1, initialValue);
             input[ii].value = network.input[ii].value;
-            input[ii].exitingNeurons = new LinkedList<Neuron<T>>();
+            input[ii].outputNeurons = new LinkedList<Neuron<T>>();
         }
 
         output = new Neuron[outputNumber];
         for (int ii = 0; ii < outputNumber; ii++) {
-            output[ii] = new Neuron<T>(null, ii, n, initialValue);
-            output[ii].enteringNeurons = new LinkedList<Neuron<T>>();
+            output[ii] = new Neuron<>(null, ii, n, initialValue);
+            output[ii].inputNeurons = new LinkedList<>();
         }
 
         neurons = new Neuron[m][n];
         for (int ii = 0; ii < m; ii++) {
             for (int jj = 0; jj < n; jj++) {
-                neurons[ii][jj] = new Neuron<T>(network.neurons[ii][jj].getOperation(), ii, jj, initialValue);
-                neurons[ii][jj].enteringNeurons = new LinkedList<Neuron<T>>();
-                neurons[ii][jj].exitingNeurons = new LinkedList<Neuron<T>>();
+                neurons[ii][jj] = new Neuron<>(network.neurons[ii][jj].getOperation(), ii, jj, initialValue);
+                neurons[ii][jj].inputNeurons = new LinkedList<>();
+                neurons[ii][jj].outputNeurons = new LinkedList<>();
                 neurons[ii][jj].setValue(network.getNeurons()[0][0].getValue());
             }
         }
 
-        for (int ii = 0; ii < m; ii++) {
-            for (int jj = 0; jj < n; jj++) {
-                for (int kk = 0; kk < enteringGatesNumber; kk++) {
-                    int xx = network.getNeurons()[ii][jj].enteringNeurons.get(kk).getI();
-                    int yy = network.getNeurons()[ii][jj].enteringNeurons.get(kk).getJ();
-                    if (yy == -1) {
-                        linkGates(input[xx], neurons[ii][jj]);
-                    } else if (yy == n) {
-                        linkGates(neurons[xx][yy], output[xx]);
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < n; j++) {
+                for (int k = 0; k < inputNeuronsNumber; k++) {
+                    int x = network.getNeurons()[i][j].inputNeurons.get(k).getI();
+                    int y = network.getNeurons()[i][j].inputNeurons.get(k).getJ();
+                    if (y == -1) {
+                        connectNeurons(input[x], neurons[i][j]);
+                    } else if (y == n) {
+                        connectNeurons(neurons[x][y], output[x]);
                     } else {
-                        linkGates(neurons[xx][yy], neurons[ii][jj]);
+                        connectNeurons(neurons[x][y], neurons[i][j]);
                     }
                 }
-                neurons[ii][jj].value = network.neurons[ii][jj].value;
+                neurons[i][j].value = network.neurons[i][j].value;
             }
         }
 
-        for (int kk = 0; kk < outputNumber; kk++) {
-            int ii = network.output[kk].enteringNeurons.getFirst().getI();
-            int jj = network.output[kk].enteringNeurons.getFirst().getJ();
-            if (jj == -1) {
-                linkGates(input[ii], output[kk]);
+        for (int k = 0; k < outputNumber; k++) {
+            int i = network.output[k].inputNeurons.getFirst().getI();
+            int j = network.output[k].inputNeurons.getFirst().getJ();
+            if (j == -1) {
+                connectNeurons(input[i], output[k]);
             } else {
-                linkGates(neurons[ii][jj], output[kk]);
+                connectNeurons(neurons[i][j], output[k]);
             }
         }
 
-        activeNeurons = new ArrayList<Neuron<T>>();
-        int ii, jj;
+        activeNeurons = new ArrayList<>();
+        int i, j;
         for (Neuron<T> x : network.getActiveNeurons()) {
-            ii = x.getI();
-            jj = x.getJ();
-            if (jj == -1) activeNeurons.add(input[ii]);
-            else if (jj == n) activeNeurons.add(output[ii]);
-            else
-                activeNeurons.add(neurons[ii][jj]);
+            i = x.getI();
+            j = x.getJ();
+            if (j == -1) activeNeurons.add(input[i]);
+            else if (j == n) activeNeurons.add(output[i]);
+            else activeNeurons.add(neurons[i][j]);
         }
     }
 
 
-    int getM() {
-        return m;
-    }
-
-
-    public void setM(int m) {
-        this.m = m;
-    }
-
-
-    int getN() {
-        return n;
-    }
-
-
-    public void setN(int n) {
-        this.n = n;
-    }
-
-
-    public double getRecurrentProbability() {
-        return recurrentProbability;
-    }
-
-
-    public void setRecurrentProbability(double recurrentProbability) {
-        this.recurrentProbability = recurrentProbability;
-    }
-
-
-    private double getProbability() {
-        return probability;
-    }
-
-
-    public void setProbability(double probability) {
-        this.probability = probability;
-    }
-
-
-    Neuron<T>[][] getNeurons() {
-        return neurons;
-    }
-
-
-    public void setGatesValue(T value) {
-        for (int ii = 0; ii < m; ii++)
-            for (int jj = 0; jj < n; jj++)
-                neurons[ii][jj].setValue(value);
-    }
-
-
-    public int getEnteringGatesNumber() {
-        return enteringGatesNumber;
-    }
-
-
-    public void setEnteringGatesNumber(int enteringGatesNumber) {
-        this.enteringGatesNumber = enteringGatesNumber;
-    }
-
-
-    public LinkedList<Operation<T>> getFunctionList() {
-        return functionList;
-    }
-
-
-    public void setFunctionList(LinkedList<Operation<T>> functionList) {
-        this.functionList = functionList;
-    }
-
-
-    public int getInputNumber() {
-        return inputNumber;
-    }
-
-
-    public void setInputNumber(int inputNumber) {
-        this.inputNumber = inputNumber;
-    }
-
-
-    int getOutputNumber() {
-        return outputNumber;
-    }
-
-
-    public void setOutputNumber(int outputNumber) {
-        this.outputNumber = outputNumber;
-    }
-
-
-    public Neuron<T>[] getInput() {
-        return input;
-    }
-
-
-    public void setInput(Neuron<T>[] input) {
-        this.input = input;
-    }
-
-
-    public Neuron<T>[] getOutput() {
-        return output;
-    }
-
-
-    public void setOutput(Neuron<T>[] output) {
-        this.output = output;
-    }
-
-
-    ArrayList<Neuron<T>> getActiveNeurons() {
-        return activeNeurons;
-    }
-
-
-    private T getInitialValue() {
-        return initialValue;
-    }
-
-
-    public void setInitialValue(T initialValue) {
-        this.initialValue = initialValue;
-    }
-
-
-    private void addToActiveGates(Neuron<T> neuron) {
-        int ii = neuron.getI(), jj = neuron.getJ();
-        if (jj == -1) {
-            neuron = input[ii];
+    private void addToActiveNeurons(Neuron<T> neuron) {
+        int i = neuron.getI(), j = neuron.getJ();
+        if (j == -1) {
+            neuron = input[i];
             if (!activeNeurons.contains(neuron)) {
                 activeNeurons.add(neuron);
             }
         } else {
             if (!activeNeurons.contains(neuron)) {
                 activeNeurons.add(neuron);
-                for (int kk = 0; kk < enteringGatesNumber; kk++) {
-                    addToActiveGates(neuron.getEnteringNeurons().get(kk));
+                for (int kk = 0; kk < inputNeuronsNumber; kk++) {
+                    addToActiveNeurons(neuron.getInputNeurons().get(kk));
                 }
             }
         }
     }
 
 
-    private void setOutputActiveGates(int num) {
+    private void setOutputActiveNeurons(int num) {
         activeNeurons.add(output[num]);
-        addToActiveGates(output[num].getEnteringNeurons().getFirst());
+        addToActiveNeurons(output[num].getInputNeurons().getFirst());
     }
 
+    private void removeConnection(Neuron<T> neuron1, Neuron<T> neuron2) {
+        neuron1.getOutputNeurons().remove(neuron2);
+        neuron2.getInputNeurons().remove(neuron1);
+    }
 
-    private void setActiveGates() {
+    private void connectNeurons(Neuron<T> g1, Neuron<T> g2, int position) {
+        g2.getInputNeurons().add(position, g1);
+        g1.getOutputNeurons().add(g2);
+    }
+
+    private void connectNeurons(Neuron<T> g1, Neuron<T> g2) {
+        g2.addInputNeurons(g1);
+        g1.addOutputNeurons(g2);
+    }
+
+    private void setActiveNeurons() {
         activeNeurons.clear();
-        for (int ii = 0; ii < output.length; ii++)
-            setOutputActiveGates(ii);
+        for (int ii = 0; ii < output.length; ii++) setOutputActiveNeurons(ii);
         activeNeurons.sort((g1, g2) -> {
             if (g1.getJ() == g2.getJ()) return 0;
             return g1.getJ() > g2.getJ() ? 1 : -1;
@@ -319,114 +191,104 @@ public class Network<T> implements Serializable {
     }
 
 
-    public void printGrid() {
-        for (int ii = 0; ii < m; ii++) {
-            for (int jj = 0; jj < n; jj++) {
-                System.out.print("(" + neurons[ii][jj].getI() + "," + neurons[ii][jj].getJ() + ")=" + neurons[ii][jj].getOperation() + "	");
+    public void printNetwork() {
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < n; j++) {
+                System.out.print("(" + neurons[i][j].getI() + "," + neurons[i][j].getJ() + ")=" + neurons[i][j].getOperation() + "	");
             }
             System.out.println();
         }
         System.out.println();
 
-        for (int ii = 0; ii < m; ii++) {
-            for (int jj = 0; jj < n; jj++) {
-                for (int kk = 0; kk < enteringGatesNumber; kk++) {
-                    int i = neurons[ii][jj].enteringNeurons.get(kk).getI();
-                    int j = neurons[ii][jj].enteringNeurons.get(kk).getJ();
-                    System.out.println(i + "," + j + "--->" + "(" + neurons[ii][jj].getI() + "," + neurons[ii][jj].getJ() + ")");
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < n; j++) {
+                for (int k = 0; k < inputNeuronsNumber; k++) {
+                    int x = neurons[i][j].inputNeurons.get(k).getI();
+                    int y = neurons[i][j].inputNeurons.get(k).getJ();
+                    System.out.println(x + "," + y + "--->" + "(" + neurons[i][j].getI() + "," + neurons[i][j].getJ() + ")");
                 }
                 System.out.println();
             }
         }
         System.out.println();
 
-        for (int ii = 0; ii < outputNumber; ii++) {
-            int i = output[ii].enteringNeurons.getFirst().getI();
-            int j = output[ii].enteringNeurons.getFirst().getJ();
-            System.out.println(i + "," + j + "--->" + "(" + output[ii].getI() + "," + output[ii].getJ() + ")");
+        for (int i = 0; i < outputNumber; i++) {
+            int x = output[i].inputNeurons.getFirst().getI();
+            int y = output[i].inputNeurons.getFirst().getJ();
+            System.out.println(x + "," + y + "--->" + "(" + output[i].getI() + "," + output[i].getJ() + ")");
         }
     }
 
 
-    private void linkGates(Neuron<T> g1, Neuron<T> g2) {
-        g2.addEnteringGate(g1);
-        g1.addExitingGate(g2);
-
-    }
-
-
-    private void linkGates(Neuron<T> g1, Neuron<T> g2, int position) {
-        g2.getEnteringNeurons().add(position, g1);
-        g1.getExitingNeurons().add(g2);
-    }
-
-
-    private void removeLink(Neuron<T> g1, Neuron<T> g2) {
-        g1.getExitingNeurons().remove(g2);
-        g2.getEnteringNeurons().remove(g1);
-    }
-
-
-    private void linkAllGates() {
+    private void connectAllNeurons() {
         int randomIi, randomJj;
-        double gateInputProbability;
+        double neuronInputProbability;
 
-        for (int jj = 0; jj < n; jj++) {
-            gateInputProbability = (double) inputNumber / (inputNumber + jj * m);
-            for (int ii = 0; ii < m; ii++) {
-                for (int kk = 0; kk < enteringGatesNumber; kk++) {
+        for (int j = 0; j < n; j++) {
+            neuronInputProbability = (double) inputNumber / (inputNumber + j * m);
+            for (int i = 0; i < m; i++) {
+                for (int k = 0; k < inputNeuronsNumber; k++) {
                     if (recurrentProbability != 0 && randomGenerator.nextDouble() < recurrentProbability) {
                         randomIi = randomGenerator.nextInt(m);
-                        randomJj = jj + randomGenerator.nextInt(n - jj);
-                        linkGates(neurons[randomIi][randomJj], neurons[ii][jj]);
+                        randomJj = j + randomGenerator.nextInt(n - j);
+                        connectNeurons(neurons[randomIi][randomJj], neurons[i][j]);
                     } else {
-                        if (randomGenerator.nextDouble() < gateInputProbability || jj == 0) {
+                        if (randomGenerator.nextDouble() < neuronInputProbability || j == 0) {
                             randomIi = randomGenerator.nextInt(inputNumber);
-                            linkGates(input[randomIi], neurons[ii][jj]);
+                            connectNeurons(input[randomIi], neurons[i][j]);
                         } else {
                             randomIi = randomGenerator.nextInt(m);
-                            randomJj = randomGenerator.nextInt(jj);
-                            linkGates(neurons[randomIi][randomJj], neurons[ii][jj]);
+                            randomJj = randomGenerator.nextInt(j);
+                            connectNeurons(neurons[randomIi][randomJj], neurons[i][j]);
                         }
                     }
                 }
             }
         }
 
-        gateInputProbability = (double) inputNumber / (inputNumber + n * m);
+        neuronInputProbability = (double) inputNumber / (inputNumber + n * m);
         for (int ii = 0; ii < outputNumber; ii++) {
-            if (randomGenerator.nextDouble() < gateInputProbability) {
+            if (randomGenerator.nextDouble() < neuronInputProbability) {
                 randomIi = randomGenerator.nextInt(inputNumber);
-                linkGates(input[randomIi], output[ii]);
+                connectNeurons(input[randomIi], output[ii]);
             } else {
                 randomIi = randomGenerator.nextInt(m);
                 randomJj = randomGenerator.nextInt(n);
-                linkGates(neurons[randomIi][randomJj], output[ii]);
+                connectNeurons(neurons[randomIi][randomJj], output[ii]);
             }
         }
 
     }
 
 
-    private void relinkGate(Neuron<T> neuron) {
-        int column, row, jj = neuron.getJ();
-        double gateInputProbability = (double) inputNumber / (inputNumber + jj * m);
-        for (int kk = 0; kk < enteringGatesNumber; kk++) {
-            if (randomGenerator.nextDouble() < probability) {
-                removeLink(neuron.getEnteringNeurons().get(kk), neuron);
+    void reassignNeuronsOperations() {
+        for (int j = 0; j < n; j++) {
+            for (int i = 0; i < m; i++) {
+                if (randomGenerator.nextDouble() < probability) {
+                    neurons[i][j].setOperation(operationList.get(randomGenerator.nextInt(operationList.size())));
+                }
+            }
+        }
+    }
 
+    private void relinkNeuron(Neuron<T> neuron) {
+        int column, row, j = neuron.getJ();
+        double neuronInputProbability = (double) inputNumber / (inputNumber + j * m);
+        for (int k = 0; k < inputNeuronsNumber; k++) {
+            if (randomGenerator.nextDouble() < probability) {
+                removeConnection(neuron.getInputNeurons().get(k), neuron);
                 if (recurrentProbability != 0 && randomGenerator.nextDouble() < recurrentProbability) {
                     row = randomGenerator.nextInt(m);
-                    column = jj + randomGenerator.nextInt(n - jj);
-                    linkGates(neurons[row][column], neuron, kk);
+                    column = j + randomGenerator.nextInt(n - j);
+                    connectNeurons(neurons[row][column], neuron, k);
                 } else {
-                    if (randomGenerator.nextDouble() < gateInputProbability || (jj == 0)) {
+                    if (randomGenerator.nextDouble() < neuronInputProbability || (j == 0)) {
                         row = randomGenerator.nextInt(inputNumber);
-                        linkGates(input[row], neuron, kk);
+                        connectNeurons(input[row], neuron, k);
                     } else {
-                        column = randomGenerator.nextInt(jj);
+                        column = randomGenerator.nextInt(j);
                         row = randomGenerator.nextInt(m);
-                        linkGates(neurons[row][column], neuron, kk);
+                        connectNeurons(neurons[row][column], neuron, k);
                     }
                 }
             }
@@ -434,111 +296,134 @@ public class Network<T> implements Serializable {
     }
 
 
-    void reassignGatesFunction() {
-        for (int jj = 0; jj < n; jj++) {
-            for (int ii = 0; ii < m; ii++) {
-                if (randomGenerator.nextDouble() < probability) {
-                    neurons[ii][jj].setOperation(functionList.get(randomGenerator.nextInt(functionList.size())));
-                }
-            }
-        }
-    }
-
-
-    protected void relinkAllGates() {
-        for (int jj = 0; jj < n; jj++) for (int ii = 0; ii < m; ii++) relinkGate(neurons[ii][jj]);
+    void relinkAllNeurons() {
+        for (int j = 0; j < n; j++) for (int i = 0; i < m; i++) relinkNeuron(neurons[i][j]);
 
         int column, row;
         double inputProbability = (double) inputNumber / (inputNumber + m * n);
         for (int ii = 0; ii < outputNumber; ii++) {
             if (randomGenerator.nextDouble() < probability) {
-                removeLink(output[ii].getEnteringNeurons().getFirst(), output[ii]);
+                removeConnection(output[ii].getInputNeurons().getFirst(), output[ii]);
                 if (randomGenerator.nextDouble() < inputProbability) {
                     row = randomGenerator.nextInt(inputNumber);
-                    linkGates(input[row], output[ii]);
+                    connectNeurons(input[row], output[ii]);
                 } else {
                     column = randomGenerator.nextInt(n);
                     row = randomGenerator.nextInt(m);
-                    linkGates(neurons[row][column], output[ii]);
+                    connectNeurons(neurons[row][column], output[ii]);
                 }
             }
         }
     }
 
+    public T calculateOutputValue(int arg) {
+        setActiveNeurons();
+        if (recurrentProbability != 0) {
+            for (Neuron<T> neuron : activeNeurons) calculateNeuronValue(neuron);
+            return output[arg].getValue();
+        } else {
+            Neuron<T> lastNeuron = output[arg].getInputNeurons().getFirst();
+            return calculateNeuronValue(lastNeuron);
+        }
+    }
 
     public void setInputValues(T[] val) {
         if (val.length != inputNumber) return;
-        int kk = 0;
+        int k = 0;
         for (T x : val) {
-            input[kk].setValue(x);
-            kk++;
+            input[k].setValue(x);
+            k++;
         }
     }
 
+    private T calculateNeuronValue(Neuron<T> neuron) {
+        int i = neuron.getI(), j = neuron.getJ();
+        LinkedList<T> valueList = new LinkedList<>();
+        LinkedList<Neuron<T>> neuronList;
+        if (j == -1) return input[i].getValue();
+        else if (j == n) {
+            output[i].setValue(output[i].getInputNeurons().getFirst().getValue());
+            return output[i].getValue();
+        } else {
+            neuronList = neurons[i][j].getInputNeurons();
+            if (recurrentProbability != 0) for (Neuron<T> x : neuronList) valueList.add(x.getValue());
+            else for (Neuron<T> x : neuronList) valueList.add(calculateNeuronValue(x));
+        }
+        neurons[i][j].setValue(neurons[i][j].getOperation().output(valueList));
+        return neurons[i][j].getValue();
+    }
 
-    public void calculateValueForEveryGate() {
-        for (int jj = 0; jj < n; jj++) {
-            for (int ii = 0; ii < m; ii++) {
+
+    public void calculatesNeuronsValues() {
+        for (int j = 0; j < n; j++) {
+            for (int i = 0; i < m; i++) {
                 LinkedList<T> values = new LinkedList<T>();
-                for (int kk = 0; kk < enteringGatesNumber; kk++) {
-                    T value = neurons[ii][jj].getEnteringNeurons().get(kk).getValue();
+                for (int k = 0; k < inputNeuronsNumber; k++) {
+                    T value = neurons[i][j].getInputNeurons().get(k).getValue();
                     values.add(value);
                 }
-                neurons[ii][jj].setValue(neurons[ii][jj].getOperation().output(values));
+                neurons[i][j].setValue(neurons[i][j].getOperation().output(values));
             }
         }
 
-        for (int jj = 0; jj < outputNumber; jj++) {
-            output[jj].setValue(output[jj].getEnteringNeurons().getFirst().getValue());
-        }
+        for (int jj = 0; jj < outputNumber; jj++)
+            output[jj].setValue(output[jj].getInputNeurons().getFirst().getValue());
     }
 
-
-    private T calculateGateValue(Neuron<T> neuron) {
-        int ii = neuron.getI(), jj = neuron.getJ();
-        LinkedList<T> valueList = new LinkedList<T>();
-        LinkedList<Neuron<T>> neuronList;
-        if (jj == -1) {
-            return input[ii].getValue();
-        } else if (jj == n) {
-            output[ii].setValue(output[ii].getEnteringNeurons().getFirst().getValue());
-            return output[ii].getValue();
-        } else {
-            neuronList = neurons[ii][jj].getEnteringNeurons();
-            if (recurrentProbability != 0) {
-                for (Neuron<T> x : neuronList) {
-                    valueList.add(x.getValue());
-                }
-            } else {
-                for (Neuron<T> x : neuronList) {
-                    valueList.add(calculateGateValue(x));
-                }
-            }
-        }
-        neurons[ii][jj].setValue(neurons[ii][jj].getOperation().output(valueList));
-
-        return neurons[ii][jj].getValue();
+    int getM() {
+        return m;
     }
 
-
-    public T calculateOutputValue(int arg) {
-        setActiveGates();
-        if (recurrentProbability != 0) {
-            for (Neuron<T> neuron : activeNeurons) {
-                calculateGateValue(neuron);
-            }
-            return output[arg].getValue();
-        } else {
-            Neuron<T> lastNeuron = output[arg].getEnteringNeurons().getFirst();
-            return calculateGateValue(lastNeuron);
-        }
+    int getN() {
+        return n;
     }
 
+    public double getRecurrentProbability() {
+        return recurrentProbability;
+    }
 
-    public void clearGatesValues() {
-        for (int ii = 0; ii < m; ii++) for (int jj = 1; jj < n; jj++) neurons[ii][jj].setValue(initialValue);
-        for (int ii = 0; ii < inputNumber; ii++) input[ii].setValue(initialValue);
-        for (int ii = 0; ii < outputNumber; ii++) output[ii].setValue(initialValue);
+    private double getProbability() {
+        return probability;
+    }
+
+    Neuron<T>[][] getNeurons() {
+        return neurons;
+    }
+
+    public void setNeuronsValues(T value) {
+        for (int i = 0; i < m; i++) for (int j = 0; j < n; j++) neurons[i][j].setValue(value);
+    }
+
+    private int getInputNeuronsNumber() {
+        return inputNeuronsNumber;
+    }
+
+    public int getInputNumber() {
+        return inputNumber;
+    }
+
+    int getOutputNumber() {
+        return outputNumber;
+    }
+
+    public Neuron<T>[] getInput() {
+        return input;
+    }
+
+    public Neuron<T>[] getOutput() {
+        return output;
+    }
+
+    public void setOutput(Neuron<T>[] output) {
+        this.output = output;
+    }
+
+    ArrayList<Neuron<T>> getActiveNeurons() {
+        return activeNeurons;
+    }
+
+    private T getInitialValue() {
+        return initialValue;
     }
 
 }

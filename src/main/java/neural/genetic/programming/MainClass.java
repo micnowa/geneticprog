@@ -2,13 +2,11 @@ package neural.genetic.programming;
 
 import neural.genetic.programming.fitness.Operation;
 import neural.genetic.programming.logic.*;
-import neural.genetic.programming.mathematics.*;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.LinkedList;
 import java.util.Random;
-import java.util.Scanner;
 
 
 public class MainClass extends Canvas {
@@ -28,7 +26,7 @@ public class MainClass extends Canvas {
     public static void main(String[] args) {
         System.out.println("1-	logic gates");
 
-        int inputNumber = 7, outputNumber = 1, rows = 10, columns = 10;
+        int inputNumber = 10, outputNumber = 1, rows = 5, columns = 5;
         double probability = 0.1, recurrentProbability = 0.0;
 
         System.out.println("Probability:	" + probability);
@@ -40,17 +38,17 @@ public class MainClass extends Canvas {
         Boolean[] tab = new Boolean[inputNumber];
         for (int i = 0; i < inputNumber; i++) tab[i] = rand.nextBoolean();
         network.setInputValues(tab);
-        network.calculateValueForEveryGate();
+        network.calculatesNeuronsValues();
 
         // Set of grids
         NetworkGenerator<Boolean> networkGenerator = new NetworkGenerator<>(network);
-        networkGenerator.getMainNetwork().calculateValueForEveryGate();
-        for (int i = 0; i < NetworkGenerator.getGridNumber(); i++) networkGenerator.getNetwork()[i].calculateValueForEveryGate();
+        networkGenerator.getMainNetwork().calculatesNeuronsValues();
+        for (int i = 0; i < NetworkGenerator.getNetworkNumber(); i++) networkGenerator.getNetwork()[i].calculatesNeuronsValues();
 
-        NetworkAlgorithm<Boolean> algorithm = new NetworkAlgorithm<>(networkGenerator, network, new LogicGatesFitter());
+        NetworkAlgorithm<Boolean> algorithm = new NetworkAlgorithm<>(networkGenerator, network, new LogicAdderScore());
         Network<Boolean> finalNetwork = algorithm.runAlgorithm();
 
-        finalNetwork.calculateValueForEveryGate();
+        finalNetwork.calculatesNeuronsValues();
         System.out.println();
     }
 

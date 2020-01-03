@@ -8,76 +8,47 @@ public class Neuron<T> {
     private int i;
     private int j;
     private Operation<T> operation;
+    LinkedList<Neuron<T>> inputNeurons;
+    LinkedList<Neuron<T>> outputNeurons;
     T value;
-    LinkedList<Neuron<T>> enteringNeurons;
-    LinkedList<Neuron<T>> exitingNeurons;
 
 
     Neuron() {
-        enteringNeurons = new LinkedList<>();
-        exitingNeurons = new LinkedList<>();
+        inputNeurons = new LinkedList<>();
+        outputNeurons = new LinkedList<>();
     }
 
 
-    Neuron(Operation<T> operation, int ii, int jj, T initialValue) {
+    Neuron(Operation<T> operation, int i, int j, T initialValue) {
         this.operation = operation;
-        this.i = ii;
-        this.j = jj;
-        this.value = initialValue;
-        enteringNeurons = new LinkedList<>();
-        exitingNeurons = new LinkedList<>();
-    }
-
-
-    public void setOperation(Operation<T> operation) {
-        this.operation = operation;
-    }
-
-
-    public Operation<T> getOperation() {
-        return operation;
-    }
-
-
-    void setI(int i) {
         this.i = i;
-    }
-
-
-    int getI() {
-        return i;
-    }
-
-
-    void setJ(int j) {
         this.j = j;
+        this.value = initialValue;
+        inputNeurons = new LinkedList<>();
+        outputNeurons = new LinkedList<>();
     }
 
-    int getJ() {
-        return j;
-    }
+    public void setOperation(Operation<T> operation) { this.operation = operation; }
 
-    LinkedList<Neuron<T>> getEnteringNeurons() {
-        return enteringNeurons;
-    }
+    public Operation<T> getOperation() { return operation; }
 
-    public LinkedList<Neuron<T>> getExitingNeurons() {
-        return exitingNeurons;
-    }
+    void setI(int i) { this.i = i; }
 
-    T getValue() {
-        return value;
-    }
+    int getI() { return i; }
 
-    void setValue(T value) {
-        this.value = value;
-    }
+    void setJ(int j) { this.j = j; }
 
-    void addEnteringGate(Neuron<T> neuron) {
-        enteringNeurons.add(neuron);
-    }
+    int getJ() { return j; }
 
-    void addExitingGate(Neuron<T> neuron) {
-        exitingNeurons.add(neuron);
-    }
+    LinkedList<Neuron<T>> getInputNeurons() { return inputNeurons; }
+
+    public LinkedList<Neuron<T>> getOutputNeurons() { return outputNeurons; }
+
+    T getValue() { return value; }
+
+    void setValue(T value) { this.value = value; }
+
+    void addInputNeurons(Neuron<T> neuron) { inputNeurons.add(neuron); }
+
+    void addOutputNeurons(Neuron<T> neuron) { outputNeurons.add(neuron); }
 }
